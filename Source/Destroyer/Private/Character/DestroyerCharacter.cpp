@@ -7,6 +7,9 @@
 #include "EnhancedInputSubsystems.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Item/Item.h"
+#include "Item/Weapons/Weapon.h"
+#include "Animation/AnimMontage.h"
 
 // Sets default values
 ADestroyerCharacter::ADestroyerCharacter()
@@ -50,6 +53,7 @@ void ADestroyerCharacter::Tick(float DeltaTime)
 }
 void ADestroyerCharacter::Move(const FInputActionValue& Value)
 {
+	if (ActionState == EActionState::ECS_Attacking) return;
 	const FVector2D MovementVector = Value.Get<FVector2D>();
 	
 	const FRotator Rotation = Controller->GetControlRotation();
@@ -71,6 +75,58 @@ void ADestroyerCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void ADestroyerCharacter::PickUp(const FInputActionValue& Value)
+{
+	AWeapon* OverlappingWeapon = Cast<AWeapon>(OverlappingItem);
+	if (OverlappingWeapon) {
+		OverlappingWeapon->Equip(GetMesh(), FName("LeftHandSocket"));
+		OverlappingItem = nullptr;
+		CharacterState = ECharacterState::ECS_EquippedOneHanded;
+	}
+}
+
+void ADestroyerCharacter::Attack(const FInputActionValue& Value)
+{
+	if (CanAttack()) {
+		ActionState = EActionState::ECS_Attacking;
+		PlayAttackMontage();
+	}
+	
+}
+
+void ADestroyerCharacter::PlayAttackMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && AttackMontage)
+	{
+		AnimInstance->Montage_Play(AttackMontage);
+		const int32 Section = FMath::RandRange(0, 1);
+		FName SectionName = FName();
+		switch (Section)
+		{
+		case 0:
+			SectionName = FName("Attack1");
+			break;
+		case 1:
+			SectionName = FName("Attack2");
+			break;
+		default:
+			break;
+		}
+		AnimInstance->Montage_JumpToSection(SectionName, AttackMontage);
+	}
+}
+
+bool ADestroyerCharacter::CanAttack()
+{
+	return ActionState == EActionState::ECS_Unoccupied && CharacterState == ECharacterState::ECS_EquippedOneHanded;
+}
+
+void ADestroyerCharacter::AttackEnd()
+{
+	ActionState = EActionState::ECS_Unoccupied;
+}
+
 // Called to bind functionality to input
 void ADestroyerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -81,6 +137,8 @@ void ADestroyerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 		EnhancedInputComponent->BindAction(MovementAction,ETriggerEvent::Triggered,this,&ADestroyerCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction,ETriggerEvent::Triggered,this,&ADestroyerCharacter::Look);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(PickAction, ETriggerEvent::Triggered, this, &ADestroyerCharacter::PickUp);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ADestroyerCharacter::Attack);
 	}
 }
 

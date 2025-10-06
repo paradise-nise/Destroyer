@@ -24,5 +24,6 @@ void UDestroyerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	if (CharacterMovement) {
 		GroundSpeed = UKismetMathLibrary::VSizeXY(CharacterMovement->Velocity);
 		IsFalling = CharacterMovement->IsFalling();
+		CharacterState = DestroyerCharacter->GetCharacterState();
 	}
 }

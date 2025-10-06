@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "Character/CharacterTypes.h"
 #include "DestroyerAnimInstance.generated.h"
 
 /**
@@ -30,4 +31,6 @@ public:
 	UPROPERTY(BlueprintReadOnly, category = Movement)
 	bool IsFalling;
 
+	UPROPERTY(BlueprintReadOnly, category = "Movement|Character State")
+	ECharacterState CharacterState;
 };

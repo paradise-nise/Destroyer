@@ -5,13 +5,17 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
-
+#include "CharacterTypes.h"
 #include "DestroyerCharacter.generated.h"
 
 class UInputMappingContext;
 class UInputAction;
 class UCameraComponent;
 class USpringArmComponent;
+class AItem;
+class UAnimMontage;
+
+
 UCLASS()
 class DESTROYER_API ADestroyerCharacter : public ACharacter
 {
@@ -41,12 +45,49 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* JumpAction;
 
+	UPROPERTY(EditAnywhere, Category = Input)
+	UInputAction* PickAction;
+
+	UPROPERTY(EditAnywhere, Category = Input)
+	UInputAction* AttackAction;
+
+	/*
+	* animation montages
+	*/
+	UPROPERTY(EditAnywhere, Category = Montages)
+	UAnimMontage* AttackMontage;
+
+	/*
+	* input callback functions
+	*/
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void PickUp(const FInputActionValue& Value);
+	void Attack(const FInputActionValue& Value);
+
+	/*
+	* play montage functions
+	*/
+	void PlayAttackMontage();
+	bool CanAttack();
+
+	UFUNCTION(BlueprintCallable)
+	void AttackEnd();
 private:
+	ECharacterState CharacterState=ECharacterState::ECS_UnEquipped;
+
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	EActionState ActionState = EActionState::ECS_Unoccupied;
+	
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* SpringArm;
 
 	UPROPERTY(VisibleAnywhere)
 	UCameraComponent* Camera;
+
+	UPROPERTY(VisibleInstanceOnly)
+	AItem* OverlappingItem;
+public:
+	FORCEINLINE void SetOverlappingItem(AItem* Item) {OverlappingItem = Item;}
+	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 };
